@@ -10,6 +10,8 @@ public enum ScreenAction
     OpenSettings,
     OpenGraphics,
     OpenSound,
+    OpenControls,
+    OpenHowToPlay,
     BackToMenu,
     ExitApp,
 }

@@ -31,6 +31,10 @@ public class Paddle
     public float SizeMultiplier { get; private set; } = 1f;
     private float _sizeEffectTimer;
 
+    // Speed modifier from power-ups
+    public float SpeedMultiplier { get; private set; } = 1f;
+    private float _speedEffectTimer;
+
     public float EffectivePaddleHeight => GameSettings.PaddleHeight * SizeMultiplier;
 
     public float SwingAngle { get; private set; }
@@ -60,6 +64,8 @@ public class Paddle
         SwingAngle = 0f;
         SizeMultiplier = 1f;
         _sizeEffectTimer = 0f;
+        SpeedMultiplier = 1f;
+        _speedEffectTimer = 0f;
     }
 
     public void ApplySizeEffect(float multiplier, float duration)
@@ -68,16 +74,24 @@ public class Paddle
         _sizeEffectTimer = duration;
     }
 
+    public void ApplySpeedEffect(float multiplier, float duration)
+    {
+        SpeedMultiplier = multiplier;
+        _speedEffectTimer = duration;
+    }
+
     public virtual void Update(float dt)
     {
+        float speed = GameSettings.PaddleSpeed * SpeedMultiplier;
         if (Raylib.IsKeyDown(_upKey))
-            Y -= GameSettings.PaddleSpeed * dt;
+            Y -= speed * dt;
         if (Raylib.IsKeyDown(_downKey))
-            Y += GameSettings.PaddleSpeed * dt;
+            Y += speed * dt;
 
         ClampY();
         UpdateSwing(dt);
         UpdateSizeEffect(dt);
+        UpdateSpeedEffect(dt);
     }
 
     protected void UpdateSizeEffect(float dt)
@@ -89,6 +103,19 @@ public class Paddle
             {
                 SizeMultiplier = 1f;
                 _sizeEffectTimer = 0f;
+            }
+        }
+    }
+
+    protected void UpdateSpeedEffect(float dt)
+    {
+        if (_speedEffectTimer > 0f)
+        {
+            _speedEffectTimer -= dt;
+            if (_speedEffectTimer <= 0f)
+            {
+                SpeedMultiplier = 1f;
+                _speedEffectTimer = 0f;
             }
         }
     }
@@ -167,17 +194,20 @@ public class Paddle
 
         float hitNorm = (ballPos.Y - Y) / halfH;
 
+        // Ball speeds up on every paddle hit
+        const float hitSpeedBoost = 15f;
+
         if (IsSwingActive)
         {
             LastHitWasSwing = true;
             // Upper swing biases upward (-), lower swing biases downward (+)
             hitNorm += _swingDir * -SwingAngleBias;
             hitNorm = Math.Clamp(hitNorm, -1.3f, 1.3f);
-            ballSpeed = MathF.Min(ballSpeed + GameSettings.BallAcceleration + SwingSpeedBonus, GameSettings.BallMaxSpeed + 100f);
+            ballSpeed = MathF.Min(ballSpeed + GameSettings.BallAcceleration + SwingSpeedBonus + hitSpeedBoost, GameSettings.BallMaxSpeed + 100f);
         }
         else
         {
-            ballSpeed = MathF.Min(ballSpeed + GameSettings.BallAcceleration, GameSettings.BallMaxSpeed);
+            ballSpeed = MathF.Min(ballSpeed + GameSettings.BallAcceleration + hitSpeedBoost, GameSettings.BallMaxSpeed);
         }
 
         float angle = hitNorm * MathF.PI / 3.5f;
@@ -205,7 +235,7 @@ public class Paddle
             Rlgl.Translatef(-X, -Y, 0);
         }
 
-        // Size effect visual indicator
+        // Size/speed effect visual indicator
         Color drawColor = Color;
         if (SizeMultiplier > 1f)
         {
@@ -223,6 +253,25 @@ public class Paddle
                 (byte)Math.Min(Color.R / 2 + 180, 255),
                 (byte)Math.Min(Color.G / 3 + 30, 255),
                 (byte)Math.Min(Color.B / 3 + 30, 255),
+                (byte)255);
+        }
+
+        if (SpeedMultiplier > 1f)
+        {
+            // Cyan tint when speed boosted
+            drawColor = new Color(
+                (byte)Math.Min(drawColor.R / 2 + 40, 255),
+                (byte)Math.Min(drawColor.G / 2 + 180, 255),
+                (byte)Math.Min(drawColor.B / 2 + 220, 255),
+                (byte)255);
+        }
+        else if (SpeedMultiplier < 1f)
+        {
+            // Orange tint when slowed
+            drawColor = new Color(
+                (byte)Math.Min(drawColor.R / 2 + 200, 255),
+                (byte)Math.Min(drawColor.G / 2 + 100, 255),
+                (byte)Math.Min(drawColor.B / 3 + 20, 255),
                 (byte)255);
         }
 

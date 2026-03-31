@@ -16,6 +16,8 @@ public static class SoundManager
     public static Sound CountdownGo { get; private set; }
     public static Sound Swing { get; private set; }
     public static Sound SwingHit { get; private set; }
+    public static Sound FireworkBurst { get; private set; }
+    public static Sound FireworkCrackle { get; private set; }
 
     private static Music _bgMusic;
     private static bool _musicPlaying;
@@ -39,6 +41,8 @@ public static class SoundManager
         CountdownGo = GenerateAndLoad("countdown_go", SineWave(900, 0.15f, 0.45f));
         Swing = GenerateAndLoad("swing", Whoosh());
         SwingHit = GenerateAndLoad("swing_hit", SwingImpact());
+        FireworkBurst = GenerateAndLoad("firework_burst", GenerateFireworkBurst());
+        FireworkCrackle = GenerateAndLoad("firework_crackle", GenerateFireworkCrackle());
 
         // Background music
         string musicPath = Path.Combine(_soundDir, "bg_music.wav");
@@ -51,7 +55,7 @@ public static class SoundManager
     {
         if (GameSettings.MusicEnabled)
         {
-            Raylib.SetMusicVolume(_bgMusic, GameSettings.Volume / 10f * 0.4f);
+            Raylib.SetMusicVolume(_bgMusic, GameSettings.EffectiveMusicVolume * 0.4f);
             if (!_musicPlaying)
             {
                 Raylib.PlayMusicStream(_bgMusic);
@@ -78,13 +82,15 @@ public static class SoundManager
         Raylib.UnloadSound(CountdownGo);
         Raylib.UnloadSound(Swing);
         Raylib.UnloadSound(SwingHit);
+        Raylib.UnloadSound(FireworkBurst);
+        Raylib.UnloadSound(FireworkCrackle);
         Raylib.UnloadMusicStream(_bgMusic);
         Raylib.CloseAudioDevice();
     }
 
     public static void Play(Sound sound)
     {
-        Raylib.SetSoundVolume(sound, GameSettings.Volume / 10f);
+        Raylib.SetSoundVolume(sound, GameSettings.EffectiveSfxVolume);
         Raylib.PlaySound(sound);
     }
 
@@ -238,36 +244,89 @@ public static class SoundManager
         return data;
     }
 
+    // --- Firework sound generators ---
+
+    private static short[] GenerateFireworkBurst()
+    {
+        // Big boom + ascending whistle — firework explosion
+        int samples = (int)(SampleRate * 0.35f);
+        var data = new short[samples];
+        for (int i = 0; i < samples; i++)
+        {
+            float t = (float)i / SampleRate;
+            float progress = (float)i / samples;
+
+            // Low boom
+            float boomEnv = MathF.Exp(-progress * 6f);
+            float boom = MathF.Sin(2f * MathF.PI * 80f * t) * boomEnv * 0.4f;
+            boom += MathF.Sin(2f * MathF.PI * 120f * t) * boomEnv * 0.2f;
+
+            // Crackle noise
+            float crackleEnv = MathF.Exp(-progress * 4f) * (progress > 0.05f ? 1f : progress / 0.05f);
+            float crackle = (Random.Shared.NextSingle() * 2f - 1f) * crackleEnv * 0.15f;
+
+            // Sparkle (high-pitched shimmer)
+            float sparkleEnv = MathF.Max(0, progress - 0.1f) * MathF.Exp(-progress * 3f);
+            float sparkle = MathF.Sin(2f * MathF.PI * 2400f * t) * sparkleEnv * 0.08f;
+            sparkle += MathF.Sin(2f * MathF.PI * 3600f * t) * sparkleEnv * 0.04f;
+
+            float value = (boom + crackle + sparkle) * 0.6f;
+            data[i] = (short)(Math.Clamp(value, -1f, 1f) * short.MaxValue);
+        }
+        return data;
+    }
+
+    private static short[] GenerateFireworkCrackle()
+    {
+        // Lighter crackle/pop — for variety
+        int samples = (int)(SampleRate * 0.2f);
+        var data = new short[samples];
+        for (int i = 0; i < samples; i++)
+        {
+            float t = (float)i / SampleRate;
+            float progress = (float)i / samples;
+
+            float env = MathF.Exp(-progress * 8f);
+            float pop = MathF.Sin(2f * MathF.PI * 300f * t) * env * 0.15f;
+            float noise = (Random.Shared.NextSingle() * 2f - 1f) * env * 0.2f;
+            float shimmer = MathF.Sin(2f * MathF.PI * 4000f * t) * MathF.Exp(-progress * 12f) * 0.06f;
+
+            float value = (pop + noise + shimmer) * 0.5f;
+            data[i] = (short)(Math.Clamp(value, -1f, 1f) * short.MaxValue);
+        }
+        return data;
+    }
+
     // --- Background music generator ---
 
     private static short[] GenerateBgMusic()
     {
-        // 16-second energetic loop — upbeat tennis match vibe
-        const float duration = 16f;
-        const float bpm = 128f;
+        // 24-second chill ambient loop — unobtrusive background atmosphere
+        const float duration = 24f;
+        const float bpm = 85f;
         float beatLen = 60f / bpm;
         int totalSamples = (int)(SampleRate * duration);
         var data = new float[totalSamples];
 
-        // Driving chord progression: Am - C - F - G
+        // Warm, dreamy chord progression: Cmaj7 - Am7 - Fmaj7 - G
         float[][] chords =
         [
-            [220f, 261.63f, 329.63f],   // Am
-            [261.63f, 329.63f, 392f],    // C
-            [174.61f, 261.63f, 349.23f], // F
-            [196f, 246.94f, 392f],       // G
+            [130.81f, 164.81f, 196f, 246.94f],   // Cmaj7
+            [110f, 130.81f, 164.81f, 196f],       // Am7
+            [87.31f, 110f, 130.81f, 164.81f],     // Fmaj7
+            [98f, 123.47f, 146.83f, 185f],        // G
         ];
 
-        // Punchy arpeggio patterns per chord
+        // Gentle arpeggio notes (slow, sparse)
         float[][] arps =
         [
-            [440f, 523.25f, 659.25f, 784f, 659.25f, 523.25f, 440f, 523.25f],
-            [523.25f, 659.25f, 784f, 1046.5f, 784f, 659.25f, 523.25f, 659.25f],
-            [349.23f, 523.25f, 698.46f, 523.25f, 349.23f, 523.25f, 698.46f, 523.25f],
-            [392f, 587.33f, 784f, 587.33f, 392f, 493.88f, 587.33f, 784f],
+            [523.25f, 659.25f, 784f, 987.77f],
+            [440f, 523.25f, 659.25f, 784f],
+            [349.23f, 440f, 523.25f, 659.25f],
+            [392f, 493.88f, 587.33f, 784f],
         ];
 
-        float chordDuration = 4f * beatLen;
+        float chordDuration = 6f * beatLen; // longer chords = more relaxed
 
         for (int i = 0; i < totalSamples; i++)
         {
@@ -275,73 +334,62 @@ public static class SoundManager
             float cycleT = t % (chordDuration * chords.Length);
             int chordIndex = (int)(cycleT / chordDuration) % chords.Length;
             float chordT = cycleT - chordIndex * chordDuration;
+            float chordProgress = chordT / chordDuration;
 
-            // Staccato pad (short chord stabs on each beat)
-            float beatT = (chordT % beatLen) / beatLen;
-            float padEnv = beatT < 0.3f ? MathF.Exp(-beatT * 12f) : 0f;
+            // Smooth pad — sustained sine chords with slow crossfade
+            float padEnv = MathF.Min(chordProgress * 6f, 1f) * MathF.Min((1f - chordProgress) * 6f, 1f);
             float pad = 0f;
             foreach (float freq in chords[chordIndex])
             {
-                pad += MathF.Sin(2f * MathF.PI * freq * t) * 0.06f;
+                // Pure sine tones, warm and soft
+                pad += MathF.Sin(2f * MathF.PI * freq * t) * 0.04f;
+                // Subtle detuned layer for warmth
+                pad += MathF.Sin(2f * MathF.PI * (freq * 1.003f) * t) * 0.015f;
             }
             pad *= padEnv;
 
-            // Driving bass (eighth note pattern, alternating root and fifth)
-            float eighthLen = beatLen / 2f;
-            float eighthT = (chordT % eighthLen) / eighthLen;
-            int eighthIndex = (int)(chordT / eighthLen) % 2;
+            // Sub bass — gentle sine, just the root note
             float bassFreq = chords[chordIndex][0] * 0.5f;
-            if (eighthIndex == 1) bassFreq *= 1.5f; // fifth
-            float bassEnv = MathF.Exp(-eighthT * 8f);
-            float bassPhase = (bassFreq * t) % 1f;
-            float bass = (MathF.Abs(bassPhase * 4f - 2f) - 1f) * bassEnv * 0.14f;
+            float bassEnv = padEnv * 0.6f;
+            float bass = MathF.Sin(2f * MathF.PI * bassFreq * t) * bassEnv * 0.10f;
 
-            // Fast arpeggio (sixteenth notes)
-            float sixteenthLen = beatLen / 4f;
-            int noteIndex = (int)(chordT / sixteenthLen) % arps[chordIndex].Length;
-            float noteT = (chordT % sixteenthLen) / sixteenthLen;
-            float arpFreq = arps[chordIndex][noteIndex];
-            float arpEnv = MathF.Min(noteT * 30f, 1f) * MathF.Exp(-noteT * 6f);
-            float arp = MathF.Sin(2f * MathF.PI * arpFreq * t) * arpEnv * 0.12f;
-            arp += MathF.Sin(2f * MathF.PI * arpFreq * 2f * t) * arpEnv * 0.03f;
+            // Slow arpeggio — one note per beat, soft sine plucks
+            float beatProgress = (chordT % beatLen) / beatLen;
+            int arpNote = (int)(chordT / beatLen) % arps[chordIndex].Length;
+            float arpFreq = arps[chordIndex][arpNote];
+            // Soft pluck envelope: quick attack, long decay
+            float arpEnv = MathF.Exp(-beatProgress * 3f) * padEnv;
+            float arp = MathF.Sin(2f * MathF.PI * arpFreq * t) * arpEnv * 0.06f;
+            // Octave shimmer (very quiet)
+            arp += MathF.Sin(2f * MathF.PI * arpFreq * 2f * t) * arpEnv * 0.015f;
 
-            // Kick drum on beats 1 and 3
-            float kickT = chordT % (beatLen * 2f);
+            // Gentle kick — soft thump on beat 1 only, felt more than heard
+            float kickPhase = chordT % (beatLen * 3f);
             float kick = 0f;
-            if (kickT < 0.08f)
+            if (kickPhase < 0.05f)
             {
-                float kt = kickT / 0.08f;
-                float kickFreq = 150f * (1f - kt * 0.7f);
-                kick = MathF.Sin(2f * MathF.PI * kickFreq * kickT) * (1f - kt) * 0.18f;
+                float kt = kickPhase / 0.05f;
+                kick = MathF.Sin(2f * MathF.PI * 60f * kickPhase) * (1f - kt) * 0.08f;
             }
 
-            // Hi-hat on every eighth note
-            float hatPhaseT = (chordT % eighthLen) / eighthLen;
+            // Soft hi-hat — sparse, on every other beat
+            float halfBeat = beatLen * 2f;
+            float hatPhase = (chordT % halfBeat) / halfBeat;
             float hat = 0f;
-            if (hatPhaseT < 0.04f)
+            if (hatPhase < 0.015f)
             {
-                hat = (Random.Shared.NextSingle() * 2f - 1f) * 0.05f * (1f - hatPhaseT / 0.04f);
+                hat = (Random.Shared.NextSingle() * 2f - 1f) * 0.02f * (1f - hatPhase / 0.015f);
             }
 
-            // Snare on beats 2 and 4
-            float snarePhase = (chordT + beatLen) % (beatLen * 2f);
-            float snare = 0f;
-            if (snarePhase < 0.06f)
-            {
-                float st = snarePhase / 0.06f;
-                snare = (Random.Shared.NextSingle() * 2f - 1f) * (1f - st) * 0.1f;
-                snare += MathF.Sin(2f * MathF.PI * 200f * snarePhase) * (1f - st) * 0.08f;
-            }
-
-            data[i] = pad + bass + arp + kick + hat + snare;
+            data[i] = pad + bass + arp + kick + hat;
         }
 
-        // Normalize and convert
+        // Normalize and convert — keep it quiet
         float maxVal = 0f;
         for (int i = 0; i < data.Length; i++)
             maxVal = MathF.Max(maxVal, MathF.Abs(data[i]));
 
-        float norm = maxVal > 0 ? 0.7f / maxVal : 1f;
+        float norm = maxVal > 0 ? 0.6f / maxVal : 1f;
         var pcm = new short[totalSamples];
         for (int i = 0; i < totalSamples; i++)
             pcm[i] = (short)(data[i] * norm * short.MaxValue);

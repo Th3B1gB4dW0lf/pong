@@ -5,9 +5,9 @@ namespace PongGameV2.Screens;
 
 public class MenuScreen : IScreen
 {
-    private enum MenuOption { Start, Settings, Exit }
+    private enum MenuOption { Start, HowToPlay, Settings, Exit }
 
-    private static readonly MenuOption[] Options = [MenuOption.Start, MenuOption.Settings, MenuOption.Exit];
+    private static readonly MenuOption[] Options = [MenuOption.Start, MenuOption.HowToPlay, MenuOption.Settings, MenuOption.Exit];
 
     private int _selected;
 
@@ -50,6 +50,7 @@ public class MenuScreen : IScreen
             return Options[_selected] switch
             {
                 MenuOption.Start => ScreenAction.SelectMode,
+                MenuOption.HowToPlay => ScreenAction.OpenHowToPlay,
                 MenuOption.Settings => ScreenAction.OpenSettings,
                 MenuOption.Exit => ScreenAction.ExitApp,
                 _ => ScreenAction.None,
@@ -90,14 +91,15 @@ public class MenuScreen : IScreen
             24, GameSettings.LeftPaddle);
 
         // Menu items — centered vertically between title block (~160) and footer (~426)
-        const int startY = 230;
-        const int itemSpacing = 46;
+        const int startY = 210;
+        const int itemSpacing = 42;
 
         for (int i = 0; i < Options.Length; i++)
         {
             string label = Options[i] switch
             {
                 MenuOption.Start => "START",
+                MenuOption.HowToPlay => "HOW TO PLAY",
                 MenuOption.Settings => "SETTINGS",
                 MenuOption.Exit => "EXIT",
                 _ => "",

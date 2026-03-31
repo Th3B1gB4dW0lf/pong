@@ -219,7 +219,11 @@ public class Game
         float x = GameSettings.VirtualWidth * 0.3f + Random.Shared.NextSingle() * GameSettings.VirtualWidth * 0.4f;
         float y = margin + Random.Shared.NextSingle() * (GameSettings.VirtualHeight - margin * 2);
 
-        var type = Random.Shared.NextSingle() < 0.5f ? PowerUpType.GrowSelf : PowerUpType.ShrinkEnemy;
+        float roll = Random.Shared.NextSingle();
+        var type = roll < 0.25f ? PowerUpType.GrowSelf
+                 : roll < 0.5f ? PowerUpType.ShrinkEnemy
+                 : roll < 0.75f ? PowerUpType.SpeedBoost
+                 : PowerUpType.SlowEnemy;
         _powerUps.Add(new PowerUp(new Vector2(x, y), type));
     }
 
@@ -246,10 +250,16 @@ public class Game
         switch (type)
         {
             case PowerUpType.GrowSelf:
-                collector.ApplySizeEffect(1.25f, PowerUpEffectDuration);
+                collector.ApplySizeEffect(1.3f, PowerUpEffectDuration);
                 break;
             case PowerUpType.ShrinkEnemy:
-                opponent.ApplySizeEffect(0.75f, PowerUpEffectDuration);
+                opponent.ApplySizeEffect(0.7f, PowerUpEffectDuration);
+                break;
+            case PowerUpType.SpeedBoost:
+                collector.ApplySpeedEffect(1.3f, PowerUpEffectDuration);
+                break;
+            case PowerUpType.SlowEnemy:
+                opponent.ApplySpeedEffect(0.7f, PowerUpEffectDuration);
                 break;
         }
     }
@@ -312,6 +322,11 @@ public class Game
                 burstColor = new Color((byte)255, (byte)255, (byte)255, (byte)255); // white
 
             _fireworks.Add(new Firework(new Vector2(x, y), burstColor));
+            // Play firework sound
+            if (Random.Shared.NextSingle() < 0.6f)
+                SoundManager.Play(SoundManager.FireworkBurst);
+            else
+                SoundManager.Play(SoundManager.FireworkCrackle);
             _fireworkSpawnTimer = 0.15f + Random.Shared.NextSingle() * 0.35f;
         }
 

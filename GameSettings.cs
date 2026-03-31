@@ -41,9 +41,17 @@ public static class GameSettings
     // Display mode
     public static bool IsFullscreen { get; set; }
 
-    // Sound
-    public static int Volume { get; set; } = 7; // 1-10
+    // Sound — three independent volume controls
+    public static int MasterVolume { get; set; } = 7;  // 0-10, scales both SFX and Music
+    public static int SfxVolume { get; set; } = 7;     // 0-10
+    public static int MusicVolume { get; set; } = 7;   // 0-10
     public static bool MusicEnabled { get; set; } = true;
+
+    /// <summary>Effective SFX volume (0.0 - 1.0), combining Master and SFX sliders.</summary>
+    public static float EffectiveSfxVolume => (MasterVolume / 10f) * (SfxVolume / 10f);
+
+    /// <summary>Effective music volume (0.0 - 1.0), combining Master and Music sliders.</summary>
+    public static float EffectiveMusicVolume => (MasterVolume / 10f) * (MusicVolume / 10f);
 
     // Available resolutions
     public static readonly (int W, int H)[] Resolutions =

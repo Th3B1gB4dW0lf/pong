@@ -5,9 +5,9 @@ namespace PongGameV2.Screens;
 
 public class SettingsScreen : IScreen
 {
-    private enum SettingsOption { Graphics, Sound }
+    private enum SettingsOption { Graphics, Sound, Controls }
 
-    private static readonly SettingsOption[] Options = [SettingsOption.Graphics, SettingsOption.Sound];
+    private static readonly SettingsOption[] Options = [SettingsOption.Graphics, SettingsOption.Sound, SettingsOption.Controls];
 
     private int _selected;
     private float _time;
@@ -42,6 +42,7 @@ public class SettingsScreen : IScreen
             {
                 SettingsOption.Graphics => ScreenAction.OpenGraphics,
                 SettingsOption.Sound => ScreenAction.OpenSound,
+                SettingsOption.Controls => ScreenAction.OpenControls,
                 _ => ScreenAction.None,
             };
         }
@@ -61,9 +62,9 @@ public class SettingsScreen : IScreen
 
         const string title = "SETTINGS";
         int titleW = Raylib.MeasureText(title, 40);
-        Raylib.DrawText(title, vw / 2 - titleW / 2, 140, 40, GameSettings.BallColor);
+        Raylib.DrawText(title, vw / 2 - titleW / 2, 120, 40, GameSettings.BallColor);
 
-        const int startY = 220;
+        const int startY = 200;
         const int spacing = 50;
 
         for (int i = 0; i < Options.Length; i++)
@@ -72,6 +73,7 @@ public class SettingsScreen : IScreen
             {
                 SettingsOption.Graphics => "GRAPHICS",
                 SettingsOption.Sound => "SOUND",
+                SettingsOption.Controls => "CONTROLS",
                 _ => "",
             };
 
@@ -103,10 +105,6 @@ public class SettingsScreen : IScreen
 
         const string footer = "ENTER to select  |  ESC to go back";
         int footerW = Raylib.MeasureText(footer, 14);
-        Raylib.DrawText(footer,
-            vw / 2 - footerW / 2,
-            vh - 24,
-            14, GameSettings.Line);
-
+        Raylib.DrawText(footer, vw / 2 - footerW / 2, vh - 24, 14, GameSettings.Line);
     }
 }

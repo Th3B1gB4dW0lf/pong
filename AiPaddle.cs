@@ -58,7 +58,7 @@ public class AiPaddle : Paddle
         }
 
         float diff = targetY - Y;
-        float maxMove = GameSettings.PaddleSpeed * _reactionSpeed * dt;
+        float maxMove = GameSettings.PaddleSpeed * SpeedMultiplier * _reactionSpeed * dt;
 
         if (MathF.Abs(diff) > _deadZone)
         {
@@ -68,9 +68,10 @@ public class AiPaddle : Paddle
         // AI swing decision
         UpdateAiSwing(dt, ball);
 
-        // Animate swing + size effect timer
+        // Animate swing + size/speed effect timers
         UpdateSwing(dt);
         UpdateSizeEffect(dt);
+        UpdateSpeedEffect(dt);
     }
 
     private void UpdateAiSwing(float dt, Ball ball)

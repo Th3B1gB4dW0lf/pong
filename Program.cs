@@ -59,6 +59,12 @@ static class Program
                 case ScreenAction.OpenSound:
                     currentScreen = new SoundSettingsScreen();
                     break;
+                case ScreenAction.OpenControls:
+                    currentScreen = new ControlsScreen();
+                    break;
+                case ScreenAction.OpenHowToPlay:
+                    currentScreen = new HowToPlayScreen();
+                    break;
                 case ScreenAction.BackToMenu:
                     selectedMode = GameMode.VsPlayer;
                     selectedDifficulty = Difficulty.Normal;
