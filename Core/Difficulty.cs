@@ -1,4 +1,4 @@
-namespace PongGameV2;
+namespace PongGameV2.Core;
 
 public enum Difficulty
 {

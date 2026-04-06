@@ -1,7 +1,8 @@
 using System;
 using Raylib_cs;
+using PongGameV2.Core;
 
-namespace PongGameV2;
+namespace PongGameV2.Gameplay;
 
 public class AiPaddle : Paddle
 {

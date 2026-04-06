@@ -1,8 +1,10 @@
 using System;
 using System.Numerics;
 using Raylib_cs;
+using PongGameV2.Audio;
+using PongGameV2.Core;
 
-namespace PongGameV2;
+namespace PongGameV2.Gameplay;
 
 public class Paddle
 {
@@ -235,45 +237,8 @@ public class Paddle
             Rlgl.Translatef(-X, -Y, 0);
         }
 
-        // Size/speed effect visual indicator
+        // Keep the player's original color — no tint from power-ups
         Color drawColor = Color;
-        if (SizeMultiplier > 1f)
-        {
-            // Green tint when enlarged
-            drawColor = new Color(
-                (byte)Math.Min(Color.R / 2 + 40, 255),
-                (byte)Math.Min(Color.G / 2 + 160, 255),
-                (byte)Math.Min(Color.B / 2 + 40, 255),
-                (byte)255);
-        }
-        else if (SizeMultiplier < 1f)
-        {
-            // Red tint when shrunk
-            drawColor = new Color(
-                (byte)Math.Min(Color.R / 2 + 180, 255),
-                (byte)Math.Min(Color.G / 3 + 30, 255),
-                (byte)Math.Min(Color.B / 3 + 30, 255),
-                (byte)255);
-        }
-
-        if (SpeedMultiplier > 1f)
-        {
-            // Cyan tint when speed boosted
-            drawColor = new Color(
-                (byte)Math.Min(drawColor.R / 2 + 40, 255),
-                (byte)Math.Min(drawColor.G / 2 + 180, 255),
-                (byte)Math.Min(drawColor.B / 2 + 220, 255),
-                (byte)255);
-        }
-        else if (SpeedMultiplier < 1f)
-        {
-            // Orange tint when slowed
-            drawColor = new Color(
-                (byte)Math.Min(drawColor.R / 2 + 200, 255),
-                (byte)Math.Min(drawColor.G / 2 + 100, 255),
-                (byte)Math.Min(drawColor.B / 3 + 20, 255),
-                (byte)255);
-        }
 
         // Glow layers
         byte glowBoost = (byte)(IsSwingActive ? 20 : 0);

@@ -1,5 +1,7 @@
 using System;
 using Raylib_cs;
+using PongGameV2.Audio;
+using PongGameV2.Core;
 
 namespace PongGameV2.Screens;
 

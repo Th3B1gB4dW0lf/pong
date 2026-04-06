@@ -1,6 +1,8 @@
 using System;
 using System.Numerics;
 using Raylib_cs;
+using PongGameV2.Audio;
+using PongGameV2.Core;
 
 namespace PongGameV2.Screens;
 
@@ -75,10 +77,10 @@ public class HowToPlayScreen : IScreen
 
         // Footer
         string footer = _page == 0
-            ? "ENTER / \u2192 next  |  ESC back to menu"
+            ? "ENTER / RIGHT next  |  ESC back to menu"
             : _page == TotalPages - 1
-                ? "\u2190 prev  |  ESC back to menu"
-                : "\u2190 prev  |  \u2192 next  |  ESC back to menu";
+                ? "LEFT prev  |  ESC back to menu"
+                : "LEFT prev  |  RIGHT next  |  ESC back to menu";
         int footerW = Raylib.MeasureText(footer, 14);
         Raylib.DrawText(footer, vw / 2 - footerW / 2, vh - 22, 14, GameSettings.Line);
     }
@@ -131,9 +133,9 @@ public class HowToPlayScreen : IScreen
         DrawMiniKey(fieldX + 35, labelY, "S", p1Color);
         Raylib.DrawText("P1 Move", fieldX + 60, labelY + 2, 14, text);
 
-        // P2 keys
-        DrawMiniKey(fieldX + fieldW - 50, labelY, "\u2191", p2Color);
-        DrawMiniKey(fieldX + fieldW - 25, labelY, "\u2193", p2Color);
+        // P2 keys (draw arrow glyphs instead of unicode)
+        DrawMiniArrowKey(fieldX + fieldW - 50, labelY, true, p2Color);
+        DrawMiniArrowKey(fieldX + fieldW - 25, labelY, false, p2Color);
         Raylib.DrawText("P2 Move", fieldX + fieldW - 115, labelY + 2, 14, text);
 
         // Description
@@ -219,6 +221,8 @@ public class HowToPlayScreen : IScreen
         Color dim = WithAlpha(GameSettings.Line, a);
         Color green = WithAlpha(new Color((byte)80, (byte)220, (byte)80, (byte)255), a);
         Color red = WithAlpha(new Color((byte)255, (byte)80, (byte)80, (byte)255), a);
+        Color blue = WithAlpha(new Color((byte)80, (byte)160, (byte)255, (byte)255), a);
+        Color orange = WithAlpha(new Color((byte)255, (byte)160, (byte)50, (byte)255), a);
         int cx = vw / 2;
 
         DrawPageTitle(cx, "POWER-UPS", title);
@@ -233,11 +237,11 @@ public class HowToPlayScreen : IScreen
         DrawPowerUpEntry(cx, startY + spacing, red,
             DrawMiniDownArrow, "SHRINK", "Decreases OPPONENT paddle size by 30%", a);
 
-        DrawPowerUpEntry(cx, startY + spacing * 2, green,
-            DrawMiniRightArrow, "SPEED UP", "Increases YOUR paddle speed by 30%", a);
+        DrawPowerUpEntry(cx, startY + spacing * 2, blue,
+            DrawMiniRightArrow, "SPEED UP", "Increases YOUR paddle speed by 50%", a);
 
-        DrawPowerUpEntry(cx, startY + spacing * 3, red,
-            DrawMiniLeftArrow, "SLOW DOWN", "Decreases OPPONENT paddle speed by 30%", a);
+        DrawPowerUpEntry(cx, startY + spacing * 3, orange,
+            DrawMiniLeftArrow, "SLOW DOWN", "Decreases OPPONENT paddle speed by 50%", a);
 
         // Bottom text
         int descY = startY + spacing * 4 + 8;
@@ -293,7 +297,7 @@ public class HowToPlayScreen : IScreen
 
         // Trophy graphic
         int trophyX = cx;
-        int trophyY = 130;
+        int trophyY = 105;
 
         // Trophy cup
         Color trophyColor = WithAlpha(new Color((byte)255, (byte)200, (byte)50, (byte)255), a);
@@ -325,12 +329,12 @@ public class HowToPlayScreen : IScreen
         Raylib.DrawCircleV(new Vector2(trophyX, trophyY + 5), 50f, WithAlpha(new Color((byte)255, (byte)200, (byte)50, (byte)15), a));
 
         // Score display example
-        int scoreY = trophyY + 60;
+        int scoreY = trophyY + 55;
         string scoreEx = "First to reach the target score wins!";
         DrawCenteredText(cx, scoreY, scoreEx, 16, text);
 
         // Score options illustration
-        int optY = scoreY + 35;
+        int optY = scoreY + 28;
         string[] scores = ["3", "5", "7"];
         int totalW = scores.Length * 50;
         int startX = cx - totalW / 2;
@@ -343,15 +347,15 @@ public class HowToPlayScreen : IScreen
             int sw = Raylib.MeasureText(scores[i], fontSize);
             Raylib.DrawText(scores[i], sx + 25 - sw / 2, optY, fontSize, numColor);
         }
-        DrawCenteredText(cx, optY + 42, "Choose 3, 5, or 7 points before the match.", 14, dim);
+        DrawCenteredText(cx, optY + 40, "Choose 3, 5, or 7 points before the match.", 14, dim);
 
         // Tips
-        int tipY = optY + 72;
-        Raylib.DrawLineEx(new Vector2(cx - 150, tipY - 8), new Vector2(cx + 150, tipY - 8), 1, dim);
-        DrawCenteredText(cx, tipY, "TIPS", 18, gold);
-        DrawCenteredText(cx, tipY + 24, "Use swings to surprise your opponent!", 14, text);
-        DrawCenteredText(cx, tipY + 42, "Collect power-ups to gain an advantage.", 14, text);
-        DrawCenteredText(cx, tipY + 60, "The ball speeds up with every hit - stay alert!", 14, dim);
+        int tipY = optY + 62;
+        Raylib.DrawLineEx(new Vector2(cx - 150, tipY - 6), new Vector2(cx + 150, tipY - 6), 1, dim);
+        DrawCenteredText(cx, tipY, "TIPS", 16, gold);
+        DrawCenteredText(cx, tipY + 20, "Use swings to surprise your opponent!", 14, text);
+        DrawCenteredText(cx, tipY + 36, "Collect power-ups to gain an advantage.", 14, text);
+        DrawCenteredText(cx, tipY + 52, "The ball speeds up with every hit - stay alert!", 14, dim);
     }
 
     // ── Helpers ──────────────────────────────────────────────
@@ -372,6 +376,30 @@ public class HowToPlayScreen : IScreen
     {
         int w = Raylib.MeasureText(text, fontSize);
         Raylib.DrawText(text, cx - w / 2, y, fontSize, color);
+    }
+
+    private static void DrawMiniArrowKey(int x, int y, bool up, Color color)
+    {
+        int boxW = 22;
+        Raylib.DrawRectangleRounded(
+            new Rectangle(x, y, boxW, 20), 0.3f, 4,
+            new Color((byte)40, (byte)40, (byte)60, (byte)255));
+        Raylib.DrawRectangleRoundedLines(
+            new Rectangle(x, y, boxW, 20), 0.3f, 4, color);
+        int acx = x + boxW / 2;
+        int acy = y + 10;
+        if (up)
+        {
+            Raylib.DrawTriangle(
+                new Vector2(acx, acy - 5), new Vector2(acx - 4, acy + 1), new Vector2(acx + 4, acy + 1), color);
+            Raylib.DrawRectangle(acx - 1, acy + 1, 3, 4, color);
+        }
+        else
+        {
+            Raylib.DrawRectangle(acx - 1, acy - 5, 3, 4, color);
+            Raylib.DrawTriangle(
+                new Vector2(acx, acy + 5), new Vector2(acx + 4, acy - 1), new Vector2(acx - 4, acy - 1), color);
+        }
     }
 
     private static void DrawMiniKey(int x, int y, string key, Color color)

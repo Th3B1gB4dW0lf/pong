@@ -1,6 +1,6 @@
 using Raylib_cs;
 
-namespace PongGameV2;
+namespace PongGameV2.Core;
 
 public static class GameSettings
 {

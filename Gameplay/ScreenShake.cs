@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using Raylib_cs;
 
-namespace PongGameV2;
+namespace PongGameV2.Gameplay;
 
 public class ScreenShake
 {

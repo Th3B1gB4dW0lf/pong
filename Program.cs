@@ -1,5 +1,7 @@
 using System;
 using Raylib_cs;
+using PongGameV2.Audio;
+using PongGameV2.Core;
 using PongGameV2.Screens;
 
 namespace PongGameV2;
@@ -49,6 +51,7 @@ static class Program
                 case ScreenAction.StartGame:
                     int winScore = currentScreen is ScoreSelectScreen ss ? ss.SelectedScore : 7;
                     currentScreen = new GameScreen(selectedMode, selectedDifficulty, winScore);
+                    SoundManager.SetInGame(true);
                     break;
                 case ScreenAction.OpenSettings:
                     currentScreen = new SettingsScreen();
@@ -69,6 +72,7 @@ static class Program
                     selectedMode = GameMode.VsPlayer;
                     selectedDifficulty = Difficulty.Normal;
                     currentScreen = new MenuScreen();
+                    SoundManager.SetInGame(false);
                     break;
                 case ScreenAction.ExitApp:
                     running = false;

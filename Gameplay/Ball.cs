@@ -1,8 +1,9 @@
 using System;
 using System.Numerics;
 using Raylib_cs;
+using PongGameV2.Core;
 
-namespace PongGameV2;
+namespace PongGameV2.Gameplay;
 
 public class Ball
 {
@@ -10,10 +11,8 @@ public class Ball
     public Vector2 Velocity;
     public float Speed { get; set; }
 
-    // Color: starts white, takes hitter's color on paddle contact
     public Color CurrentColor { get; set; }
 
-    // Fire mode: activated by swing hits, decays over time
     public float FireTimer { get; set; }
     private const float FireDuration = 2.0f;
     public bool IsOnFire => FireTimer > 0f;
@@ -63,20 +62,15 @@ public class Ball
 
     public bool WallBounced { get; private set; }
 
-    /// <summary>
-    /// Returns true if the ball went out of bounds. Sets scoringSide: -1 = left scored, +1 = right scored.
-    /// </summary>
     public bool Update(float dt, out int scoringSide)
     {
         scoringSide = 0;
         WallBounced = false;
         Position += Velocity * dt;
 
-        // Fire decay
         if (FireTimer > 0f)
             FireTimer -= dt;
 
-        // Top/bottom bounce
         if (Position.Y - GameSettings.BallRadius < 0)
         {
             Position.Y = GameSettings.BallRadius;
@@ -90,16 +84,15 @@ public class Ball
             WallBounced = true;
         }
 
-        // Out of bounds check
         if (Position.X < -GameSettings.BallRadius * 2)
         {
-            scoringSide = 1; // right player scores
+            scoringSide = 1;
             return true;
         }
 
         if (Position.X > GameSettings.VirtualWidth + GameSettings.BallRadius * 2)
         {
-            scoringSide = -1; // left player scores
+            scoringSide = -1;
             return true;
         }
 
@@ -119,20 +112,16 @@ public class Ball
 
     private Color GetFireColor()
     {
-        // Random fire color: orange / yellow / red mix
         float r = Random.Shared.NextSingle();
-        if (r < 0.33f)
-            return new Color((byte)255, (byte)100, (byte)20, (byte)255);  // orange
-        if (r < 0.66f)
-            return new Color((byte)255, (byte)200, (byte)40, (byte)255);  // yellow
-        return new Color((byte)255, (byte)50, (byte)30, (byte)255);        // red
+        if (r < 0.33f) return new Color((byte)255, (byte)100, (byte)20, (byte)255);
+        if (r < 0.66f) return new Color((byte)255, (byte)200, (byte)40, (byte)255);
+        return new Color((byte)255, (byte)50, (byte)30, (byte)255);
     }
 
     public void Draw()
     {
         var bc = CurrentColor;
 
-        // Trail
         for (int i = 0; i < TrailLength; i++)
         {
             int idx = (_trailIndex + i) % TrailLength;
@@ -140,12 +129,10 @@ public class Ball
 
             if (IsOnFire)
             {
-                // Fire trail: bigger, brighter, colored
                 var fc = _trailColors[idx];
                 byte alpha = (byte)(t * 160);
                 float radius = GameSettings.BallRadius * t * 1.2f;
                 Raylib.DrawCircleV(_trail[idx], radius, new Color(fc.R, fc.G, fc.B, alpha));
-                // Extra fire particle layer
                 if (t > 0.3f)
                 {
                     float sparkRadius = radius * 0.5f;
@@ -164,18 +151,15 @@ public class Ball
 
         if (IsOnFire)
         {
-            // Fire glow: animated, multi-layered
             float fireIntensity = MathF.Min(FireTimer / (FireDuration * 0.3f), 1f);
             float flicker = 0.85f + Random.Shared.NextSingle() * 0.15f;
 
-            // Outer orange glow
             for (int i = 4; i >= 1; i--)
             {
                 float r = GameSettings.BallRadius + i * 7f * flicker;
                 byte a = (byte)(35 * fireIntensity / i);
                 Raylib.DrawCircleV(Position, r, new Color((byte)255, (byte)120, (byte)20, a));
             }
-            // Inner yellow glow
             for (int i = 2; i >= 1; i--)
             {
                 float r = GameSettings.BallRadius + i * 4f;
@@ -183,14 +167,12 @@ public class Ball
                 Raylib.DrawCircleV(Position, r, new Color((byte)255, (byte)220, (byte)60, a));
             }
 
-            // Core: bright white-yellow
             Raylib.DrawCircleV(Position, GameSettings.BallRadius,
                 new Color((byte)255, (byte)240, (byte)180, (byte)255));
             Raylib.DrawCircleV(Position, GameSettings.BallRadius * 0.6f, Color.White);
         }
         else
         {
-            // Normal glow in player color
             for (int i = 3; i >= 1; i--)
             {
                 float r = GameSettings.BallRadius + i * 6f;
@@ -198,7 +180,6 @@ public class Ball
                 Raylib.DrawCircleV(Position, r, new Color(bc.R, bc.G, bc.B, a));
             }
 
-            // Solid ball in player color
             Raylib.DrawCircleV(Position, GameSettings.BallRadius, bc);
         }
     }

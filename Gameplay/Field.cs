@@ -1,12 +1,12 @@
 using Raylib_cs;
+using PongGameV2.Core;
 
-namespace PongGameV2;
+namespace PongGameV2.Gameplay;
 
 public static class Field
 {
     public static void Draw()
     {
-        // Center dashed line
         const int dashHeight = 12;
         const int gap = 10;
         for (int y = 0; y < GameSettings.VirtualHeight; y += dashHeight + gap)
@@ -14,7 +14,6 @@ public static class Field
             Raylib.DrawRectangle(GameSettings.VirtualWidth / 2 - 2, y, 4, dashHeight, GameSettings.Line);
         }
 
-        // Center circle
         Raylib.DrawCircleLines(GameSettings.VirtualWidth / 2, GameSettings.VirtualHeight / 2, 60, GameSettings.Line);
     }
 

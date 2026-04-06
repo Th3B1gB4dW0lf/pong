@@ -1,8 +1,9 @@
 using System;
 using System.Numerics;
 using Raylib_cs;
+using PongGameV2.Core;
 
-namespace PongGameV2;
+namespace PongGameV2.Gameplay;
 
 public enum PowerUpType
 {
@@ -72,36 +73,41 @@ public class PowerUp
         switch (Type)
         {
             case PowerUpType.GrowSelf:
-                DrawIcon(r, globalAlpha,
-                    new Color((byte)80, (byte)220, (byte)80, globalAlpha),
-                    new Color((byte)20, (byte)60, (byte)20, (byte)(globalAlpha < 200 ? globalAlpha : 200)));
-                // Up arrow (green)
-                DrawUpArrow(cx, cy, new Color((byte)80, (byte)220, (byte)80, globalAlpha));
+            {
+                // Green
+                Color col = new((byte)80, (byte)220, (byte)80, globalAlpha);
+                Color bg = new((byte)20, (byte)60, (byte)20, (byte)(globalAlpha < 200 ? globalAlpha : 200));
+                DrawIcon(r, globalAlpha, col, bg);
+                DrawUpArrow(cx, cy, col);
                 break;
-
+            }
             case PowerUpType.ShrinkEnemy:
-                DrawIcon(r, globalAlpha,
-                    new Color((byte)255, (byte)80, (byte)80, globalAlpha),
-                    new Color((byte)60, (byte)20, (byte)20, (byte)(globalAlpha < 200 ? globalAlpha : 200)));
-                // Down arrow (red)
-                DrawDownArrow(cx, cy, new Color((byte)255, (byte)80, (byte)80, globalAlpha));
+            {
+                // Red
+                Color col = new((byte)255, (byte)80, (byte)80, globalAlpha);
+                Color bg = new((byte)60, (byte)20, (byte)20, (byte)(globalAlpha < 200 ? globalAlpha : 200));
+                DrawIcon(r, globalAlpha, col, bg);
+                DrawDownArrow(cx, cy, col);
                 break;
-
+            }
             case PowerUpType.SpeedBoost:
-                DrawIcon(r, globalAlpha,
-                    new Color((byte)80, (byte)220, (byte)80, globalAlpha),
-                    new Color((byte)20, (byte)60, (byte)20, (byte)(globalAlpha < 200 ? globalAlpha : 200)));
-                // Right arrow (green)
-                DrawRightArrow(cx, cy, new Color((byte)80, (byte)220, (byte)80, globalAlpha));
+            {
+                // Blue
+                Color col = new((byte)80, (byte)160, (byte)255, globalAlpha);
+                Color bg = new((byte)20, (byte)30, (byte)60, (byte)(globalAlpha < 200 ? globalAlpha : 200));
+                DrawIcon(r, globalAlpha, col, bg);
+                DrawRightArrow(cx, cy, col);
                 break;
-
+            }
             case PowerUpType.SlowEnemy:
-                DrawIcon(r, globalAlpha,
-                    new Color((byte)255, (byte)80, (byte)80, globalAlpha),
-                    new Color((byte)60, (byte)20, (byte)20, (byte)(globalAlpha < 200 ? globalAlpha : 200)));
-                // Left arrow (red)
-                DrawLeftArrow(cx, cy, new Color((byte)255, (byte)80, (byte)80, globalAlpha));
+            {
+                // Orange
+                Color col = new((byte)255, (byte)160, (byte)50, globalAlpha);
+                Color bg = new((byte)60, (byte)40, (byte)15, (byte)(globalAlpha < 200 ? globalAlpha : 200));
+                DrawIcon(r, globalAlpha, col, bg);
+                DrawLeftArrow(cx, cy, col);
                 break;
+            }
         }
     }
 

@@ -1,4 +1,6 @@
 using Raylib_cs;
+using PongGameV2.Core;
+using PongGameV2.Gameplay;
 
 namespace PongGameV2.Screens;
 

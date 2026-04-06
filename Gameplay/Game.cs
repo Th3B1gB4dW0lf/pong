@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Raylib_cs;
+using PongGameV2.Audio;
+using PongGameV2.Core;
 
-namespace PongGameV2;
+namespace PongGameV2.Gameplay;
 
 public class Game
 {
     private readonly Paddle _leftPaddle;
     private readonly Paddle _rightPaddle;
-    private readonly AiPaddle? _aiPaddle; // non-null when VsCpu
+    private readonly AiPaddle? _aiPaddle;
     private readonly Ball _ball;
     private readonly ScreenShake _shake;
     private readonly GameMode _mode;
@@ -26,7 +28,7 @@ public class Game
     // Power-ups
     private readonly List<PowerUp> _powerUps = new();
     private float _powerUpSpawnTimer;
-    private int _lastHitSide; // -1 = left paddle hit last, +1 = right paddle hit last
+    private int _lastHitSide;
 
     private const float PowerUpSpawnInterval = 6f;
     private const int MaxPowerUps = 2;
@@ -92,7 +94,6 @@ public class Game
     {
         if (_gameOver)
         {
-            // Update fireworks
             _gameOverTime += dt;
             UpdateFireworks(dt);
 
@@ -101,7 +102,6 @@ public class Game
             return;
         }
 
-        // Pause toggle (not during countdown or game over)
         if (Raylib.IsKeyPressed(KeyboardKey.Space) && _countdownTimer <= 0f)
         {
             _paused = !_paused;
@@ -119,7 +119,6 @@ public class Game
         else
             _rightPaddle.Update(dt);
 
-        // Countdown before serve
         if (_countdownTimer > 0f)
         {
             int displayValue = (int)MathF.Ceiling(_countdownTimer);
@@ -138,7 +137,6 @@ public class Game
             return;
         }
 
-        // Ball update
         if (_ball.Update(dt, out int scoringSide))
         {
             OnScore(scoringSide);
@@ -148,7 +146,6 @@ public class Game
         if (_ball.WallBounced)
             SoundManager.Play(SoundManager.WallBounce);
 
-        // Paddle collisions
         if (_ball.Velocity.X < 0)
         {
             var pos = _ball.Position;
@@ -182,20 +179,15 @@ public class Game
             }
         }
 
-        // Power-up spawning
         UpdatePowerUpSpawning(dt);
-
-        // Power-up collection
         UpdatePowerUpCollection();
 
-        // Power-up despawn
         for (int i = _powerUps.Count - 1; i >= 0; i--)
         {
             if (_powerUps[i].IsExpired)
                 _powerUps.RemoveAt(i);
         }
 
-        // Update power-ups
         foreach (var pu in _powerUps)
             pu.Update(dt);
 
@@ -256,10 +248,10 @@ public class Game
                 opponent.ApplySizeEffect(0.7f, PowerUpEffectDuration);
                 break;
             case PowerUpType.SpeedBoost:
-                collector.ApplySpeedEffect(1.3f, PowerUpEffectDuration);
+                collector.ApplySpeedEffect(1.5f, PowerUpEffectDuration);
                 break;
             case PowerUpType.SlowEnemy:
-                opponent.ApplySpeedEffect(0.7f, PowerUpEffectDuration);
+                opponent.ApplySpeedEffect(0.5f, PowerUpEffectDuration);
                 break;
         }
     }
@@ -294,35 +286,25 @@ public class Game
         }
     }
 
-    // ── Fireworks ────────────────────────────────────────────
-
     private void UpdateFireworks(float dt)
     {
         _fireworkSpawnTimer -= dt;
         if (_fireworkSpawnTimer <= 0f)
         {
-            // Spawn a new firework burst
             float x = 100f + Random.Shared.NextSingle() * (GameSettings.VirtualWidth - 200f);
             float y = 60f + Random.Shared.NextSingle() * (GameSettings.VirtualHeight - 180f);
             bool leftWon = _leftScore >= _winScore;
             Color winColor = leftWon ? GameSettings.LeftPaddle : GameSettings.RightPaddle;
 
-            // Mix winner color with random bright colors
             Color burstColor;
             float r = Random.Shared.NextSingle();
-            if (r < 0.4f)
-                burstColor = winColor;
-            else if (r < 0.6f)
-                burstColor = new Color((byte)255, (byte)220, (byte)50, (byte)255);  // gold
-            else if (r < 0.75f)
-                burstColor = new Color((byte)255, (byte)100, (byte)50, (byte)255);  // orange
-            else if (r < 0.9f)
-                burstColor = new Color((byte)100, (byte)220, (byte)255, (byte)255); // cyan
-            else
-                burstColor = new Color((byte)255, (byte)255, (byte)255, (byte)255); // white
+            if (r < 0.4f) burstColor = winColor;
+            else if (r < 0.6f) burstColor = new Color((byte)255, (byte)220, (byte)50, (byte)255);
+            else if (r < 0.75f) burstColor = new Color((byte)255, (byte)100, (byte)50, (byte)255);
+            else if (r < 0.9f) burstColor = new Color((byte)100, (byte)220, (byte)255, (byte)255);
+            else burstColor = new Color((byte)255, (byte)255, (byte)255, (byte)255);
 
             _fireworks.Add(new Firework(new Vector2(x, y), burstColor));
-            // Play firework sound
             if (Random.Shared.NextSingle() < 0.6f)
                 SoundManager.Play(SoundManager.FireworkBurst);
             else
@@ -338,8 +320,6 @@ public class Game
         }
     }
 
-    // ── Draw ─────────────────────────────────────────────────
-
     public void Draw()
     {
         Raylib.ClearBackground(GameSettings.Background);
@@ -349,7 +329,6 @@ public class Game
         Field.Draw();
         Field.DrawScores(_leftScore, _rightScore);
 
-        // Draw power-ups
         foreach (var pu in _powerUps)
             pu.Draw();
 
@@ -357,7 +336,6 @@ public class Game
         _rightPaddle.Draw();
         _ball.Draw();
 
-        // Countdown text
         if (_countdownTimer > 0f && !_gameOver)
         {
             int count = (int)MathF.Ceiling(_countdownTimer);
@@ -371,7 +349,6 @@ public class Game
 
         Raylib.EndMode2D();
 
-        // Pause overlay
         if (_paused && !_gameOver)
             DrawPaused();
 
@@ -399,11 +376,9 @@ public class Game
 
     private void DrawGameOver()
     {
-        // Dark overlay
         Raylib.DrawRectangle(0, 0, GameSettings.VirtualWidth, GameSettings.VirtualHeight,
             new Color((byte)0, (byte)0, (byte)0, (byte)180));
 
-        // Draw fireworks behind text
         foreach (var fw in _fireworks)
             fw.Draw();
 
@@ -411,11 +386,9 @@ public class Game
         string winner = leftWon ? "PLAYER 1 WINS!" : "PLAYER 2 WINS!";
         Color winColor = leftWon ? GameSettings.LeftPaddle : GameSettings.RightPaddle;
 
-        // Pulsing winner text
         float pulse = 1f + MathF.Sin(_gameOverTime * 3f) * 0.05f;
         int fontSize = (int)(50 * pulse);
 
-        // Glow layers behind text
         int w1 = Raylib.MeasureText(winner, fontSize);
         int textX = GameSettings.VirtualWidth / 2 - w1 / 2;
         int textY = GameSettings.VirtualHeight / 2 - 60;
@@ -430,16 +403,13 @@ public class Game
             Raylib.DrawText(winner, textX + g, textY - g, fontSize, glow);
         }
 
-        // Main winner text with bright color
         Raylib.DrawText(winner, textX, textY, fontSize, winColor);
 
-        // Score display
         string scoreText = $"{_leftScore} - {_rightScore}";
         int scoreW = Raylib.MeasureText(scoreText, 36);
         Raylib.DrawText(scoreText, GameSettings.VirtualWidth / 2 - scoreW / 2,
             textY + fontSize + 10, 36, GameSettings.Text);
 
-        // Restart hint (fading in after a short delay)
         if (_gameOverTime > 1.5f)
         {
             float fadeAlpha = MathF.Min((_gameOverTime - 1.5f) * 2f, 1f);
@@ -450,94 +420,4 @@ public class Game
                 textY + fontSize + 56, 22, new Color(GameSettings.Text.R, GameSettings.Text.G, GameSettings.Text.B, a));
         }
     }
-}
-
-// ── Firework particle system ──────────────────────────────
-
-public class Firework
-{
-    private readonly List<FireworkParticle> _particles = new();
-    private float _age;
-
-    public bool IsDead => _particles.Count == 0 && _age > 0.1f;
-
-    public Firework(Vector2 center, Color color)
-    {
-        int count = 20 + Random.Shared.Next(20);
-        for (int i = 0; i < count; i++)
-        {
-            float angle = Random.Shared.NextSingle() * MathF.PI * 2f;
-            float speed = 60f + Random.Shared.NextSingle() * 180f;
-            float lifetime = 0.6f + Random.Shared.NextSingle() * 0.8f;
-            float size = 1.5f + Random.Shared.NextSingle() * 2.5f;
-
-            // Slight color variation
-            byte rVar = (byte)Math.Clamp(color.R + Random.Shared.Next(-30, 30), 0, 255);
-            byte gVar = (byte)Math.Clamp(color.G + Random.Shared.Next(-30, 30), 0, 255);
-            byte bVar = (byte)Math.Clamp(color.B + Random.Shared.Next(-30, 30), 0, 255);
-
-            _particles.Add(new FireworkParticle
-            {
-                Position = center,
-                Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * speed,
-                Color = new Color(rVar, gVar, bVar, (byte)255),
-                Lifetime = lifetime,
-                MaxLifetime = lifetime,
-                Size = size,
-            });
-        }
-    }
-
-    public void Update(float dt)
-    {
-        _age += dt;
-        for (int i = _particles.Count - 1; i >= 0; i--)
-        {
-            var p = _particles[i];
-            p.Position += p.Velocity * dt;
-            p.Velocity *= 1f - 2.5f * dt; // drag
-            p.Velocity.Y += 40f * dt;      // gravity
-            p.Lifetime -= dt;
-            _particles[i] = p;
-
-            if (p.Lifetime <= 0f)
-                _particles.RemoveAt(i);
-        }
-    }
-
-    public void Draw()
-    {
-        foreach (var p in _particles)
-        {
-            float t = p.Lifetime / p.MaxLifetime;
-            byte alpha = (byte)(t * 255);
-            float size = p.Size * (0.3f + t * 0.7f);
-
-            Color c = new(p.Color.R, p.Color.G, p.Color.B, alpha);
-
-            // Glow
-            byte glowAlpha = (byte)(t * 60);
-            Raylib.DrawCircleV(p.Position, size * 3f, new Color(p.Color.R, p.Color.G, p.Color.B, glowAlpha));
-
-            // Core
-            Raylib.DrawCircleV(p.Position, size, c);
-
-            // Bright center
-            if (t > 0.5f)
-            {
-                byte wa = (byte)((t - 0.5f) * 2f * 200);
-                Raylib.DrawCircleV(p.Position, size * 0.4f, new Color((byte)255, (byte)255, (byte)255, wa));
-            }
-        }
-    }
-}
-
-public struct FireworkParticle
-{
-    public Vector2 Position;
-    public Vector2 Velocity;
-    public Color Color;
-    public float Lifetime;
-    public float MaxLifetime;
-    public float Size;
 }
